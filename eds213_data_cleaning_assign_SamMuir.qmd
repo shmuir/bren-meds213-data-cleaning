@@ -1,0 +1,73 @@
+---
+title: "Assignment 2 - Data Cleaning"
+author: "Sam Muir"
+format: html
+---
+
+```{r}
+#| message: false  
+
+# Libraries
+library(tidyverse)
+
+# file names
+datadir_raw <- "data/raw/"
+
+datadir_processed <- "data/processed/"
+
+species_file <- "ASDN_Daily_species.csv"
+
+snowsurvey_file <- "ASDN_Snow_survey.csv"
+```
+
+```{r}
+# Import the species
+snowsurvey_csv <- read_csv("data/snow_cover_fixed.csv")
+
+glimpse(snowsurvey_csv)
+```
+
+### Cleaning the `Water_cover` column
+```{r}
+snowsurvey_csv %>%
+  count(Water_cover) %>%
+  filter(is.na(as.numeric(Water_cover)))
+```
+- We have values that are not numeric: "n/a", "unk", "-", and "."
+
+```{r}
+# turning these character values in NAs
+# from the Readme: the "-" indicates an absence of data
+watercover_fixed <- snowsurvey_csv %>%
+  mutate(Water_cover = ifelse(Water_cover %in% c("n/a", "unk", "-", "."), NA, Water_cover),
+         Water_cover = as.numeric(Water_cover))
+
+glimpse(watercover_fixed)
+```
+
+```{r}
+# check for values over 100
+watercover_fixed %>%
+  filter(Water_cover > 100)
+
+watercover_fixed <- watercover_fixed %>%
+  mutate(Water_cover = ifelse(Water_cover > 100, NA, Water_cover))
+```
+
+- In this case we are assuming that the water cover of 353 is incorrect. This row also has an illogical value of -298 for land cover. Though the value for snow cover does make sense (45). We could assume that the 45 is correct and that with another combination of Snow and Water cover will equal a total cover of 100. But, I think it makes more sense to assume that all of the values in that row are incorrect and make everything NA. Even though 45 is a reasonable value, it still could be a mistakenly recorded values like the others in the row.  
+
+```{r}
+# check for negative values
+watercover_fixed %>%
+  filter(Water_cover < 0)
+# no negative values
+```
+
+### Cleaning the `Land_cover` column
+```{r}
+watercover_fixed %>%
+  count(Land_cover) %>%
+  filter(is.na(as.numeric(Land_cover)))
+```
+- We have values that are not numeric: "n/a", "unk", "-", and "."
+
