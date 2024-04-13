@@ -27,9 +27,29 @@ snowsurvey_csv <- read_csv("data/snow_cover_fixed.csv")
 glimpse(snowsurvey_csv)
 ```
 
+### Cleaning in `Snow_cover` column
+```{r}
+snowsurvey_fixed <- snowsurvey_csv %>%
+  mutate(Snow_cover = ifelse(Snow_cover %in% c(".", "-", "n/a", "unk"), NA, Snow_cover))
+
+snowsurvey_fixed <- snowsurvey_fixed %>%
+  mutate(Snow_cover = ifelse(Snow_cover == "<1", 0, Snow_cover))
+
+snowsurvey_fixed <- snowsurvey_fixed %>%
+  mutate(Snow_cover = as.numeric(Snow_cover))
+
+snowsurvey_fixed <- snowsurvey_fixed %>%
+  # filter(Snow_cover > 100) %>%
+  mutate(Snow_cover = ifelse(Snow_cover > 100, NA, Snow_cover))
+
+snowsurvey_fixed %>%
+  filter(Snow_cover < 0)
+```
+
+
 ### Cleaning the `Water_cover` column
 ```{r}
-snowsurvey_csv %>%
+snowsurvey_fixed %>%
   count(Water_cover) %>%
   filter(is.na(as.numeric(Water_cover)))
 ```
@@ -38,7 +58,7 @@ snowsurvey_csv %>%
 ```{r}
 # turning these character values in NAs
 # from the Readme: the "-" indicates an absence of data
-watercover_fixed <- snowsurvey_csv %>%
+watercover_fixed <- snowsurvey_fixed %>%
   mutate(Water_cover = ifelse(Water_cover %in% c("n/a", "unk", "-", "."), NA, Water_cover),
          Water_cover = as.numeric(Water_cover))
 
@@ -70,4 +90,100 @@ watercover_fixed %>%
   filter(is.na(as.numeric(Land_cover)))
 ```
 - We have values that are not numeric: "n/a", "unk", "-", and "."
+
+```{r}
+# turning these character values in NAs
+# from the Readme: the "-" indicates an absence of data
+landcover_fixed <- watercover_fixed %>%
+  mutate(Land_cover = ifelse(Land_cover %in% c("n/a", "unk", "-", "."), NA, Land_cover),
+         Land_cover = as.numeric(Land_cover))
+
+glimpse(landcover_fixed)
+```
+
+```{r}
+# check for values over 100
+landcover_fixed %>%
+  filter(Land_cover > 100)
+# no values over 100
+
+# check for negative values
+landcover_fixed %>%
+  filter(Land_cover < 0)
+```
+There are two Land_cover values that are less than 0: -100 & -298. In this case, each of these is part of a row that also have values that do not make sense for the other cover categories. I do not want to try to guess what they may have been intending, so I am going to set all of the cover type values for these two rows to NA. 
+
+```{r}
+landcover_fixed <- landcover_fixed %>%
+  mutate(Snow_cover = ifelse(Land_cover < 0, NA, Snow_cover),
+         Water_cover = ifelse(Land_cover < 0, NA, Water_cover),
+         Land_cover = ifelse(Land_cover < 0, NA, Land_cover),
+         Total_cover = ifelse(Land_cover < 0, NA, Total_cover))
+
+landcover_fixed %>%
+  filter(Land_cover < 0)
+```
+
+Looking at the new landcover_fixed data frame, I can see that there are cases where there are non-zero values entered for certain cover types, but the total cover is 0. 
+
+### Cleaning the `Total_cover` column
+
+```{r}
+landcover_fixed %>%
+  count(Total_cover) %>%
+  filter(is.na(as.numeric(Total_cover)))
+
+totalcover_fixed <- landcover_fixed %>%
+  mutate(Total_cover = as.numeric(Total_cover))
+```
+
+```{r}
+# check for values over 100
+totalcover_fixed %>%
+  filter(Total_cover > 100)
+# no values over 100
+
+# check for negative values
+totalcover_fixed %>%
+  filter(Total_cover < 0)
+```
+ - there are no total cover values less than 0, but there are many greater than 100
+ 
+```{r}
+totalcover_fixed <- totalcover_fixed %>%
+  mutate(Total_cover = ifelse(Total_cover > 100, NA, Total_cover))
+
+totalcover_fixed %>%
+  filter(Total_cover > 100)
+
+glimpse(totalcover_fixed)
+```
+ 
+##### Making sure the cover columns equal the total cover
+
+```{r}
+totalcover_fixed %>%
+  mutate(match = case_when((Snow_cover + Water_cover + Land_cover) != Total_cover ~ "no")) %>%
+  select(-Notes) %>%
+  filter(match == "no")
+
+totalcover_fixed %>%
+  filter(Total_cover != 100)
+```
+- Here I can see that there are 184 rows where snow + water + land does not equal the total in the total cover column
+- There are also 4,626 rows where land cover is not equal to 100
+
+Plan:
+- if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return that sum in the `Total_cover`
+- if `Snow_cover` + `Water_cover` + `Land_cover` < 100 then inspect and see what's going on
+- if `Snow_cover` + `Water_cover` + `Land_cover` > 100 then return NAs for all the cover types
+
+```{r}
+cover_fixed <- totalcover_fixed %>%
+  mutate(total_fixed = ifelse((Snow_cover + Water_cover + Land_cover) == 100, (Snow_cover + Water_cover + Land_cover), NA))
+
+cover_fixed %>%
+  filter(Snow_cover + Water_cover + Land_cover < 100) %>%
+  select(-Notes)
+```
 
