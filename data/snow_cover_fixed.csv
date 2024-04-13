@@ -221,7 +221,7 @@ barr,2011,31-May-11,brw3,b2,70,0,30,100,abankert,NA
 barr,2011,31-May-11,brw3,b4,80,0,20,100,abankert,NA
 barr,2011,31-May-11,brw3,b6,80,0,20,100,abankert,NA
 barr,2011,31-May-11,brw3,b8,80,0,20,100,abankert,NA
-barr,2011,31-May-11,brw3,d10,200,0,-100,100,abankert,NA
+barr,2011,31-May-11,brw3,d10,NA,0,-100,100,abankert,NA
 barr,2011,31-May-11,brw3,d12,70,0,30,100,abankert,NA
 barr,2011,31-May-11,brw3,d2,80,0,20,100,abankert,NA
 barr,2011,31-May-11,brw3,d4,90,0,10,100,abankert,NA
@@ -39775,7 +39775,7 @@ barr,2007,5-Jun-07,brw1,h10,90,0,0,90,at,NA
 barr,2007,5-Jun-07,brw1,h12,90,0,0,90,at,NA
 barr,2007,5-Jun-07,brw1,j2,50,0,0,50,at,NA
 barr,2007,5-Jun-07,brw1,j4,60,0,0,60,at,NA
-barr,2007,5-Jun-07,brw1,j6,470,0,0,470,at,NA
+barr,2007,5-Jun-07,brw1,j6,NA,0,0,470,at,NA
 barr,2007,5-Jun-07,brw1,j8,90,0,0,90,at,NA
 barr,2007,5-Jun-07,brw1,j10,100,0,0,100,at,NA
 barr,2007,5-Jun-07,brw1,j12,100,0,0,100,at,NA

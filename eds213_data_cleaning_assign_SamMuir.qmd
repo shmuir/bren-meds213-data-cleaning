@@ -27,25 +27,6 @@ snowsurvey_csv <- read_csv("data/snow_cover_fixed.csv")
 glimpse(snowsurvey_csv)
 ```
 
-### Cleaning in `Snow_cover` column
-```{r}
-snowsurvey_fixed <- snowsurvey_csv %>%
-  mutate(Snow_cover = ifelse(Snow_cover %in% c(".", "-", "n/a", "unk"), NA, Snow_cover))
-
-snowsurvey_fixed <- snowsurvey_fixed %>%
-  mutate(Snow_cover = ifelse(Snow_cover == "<1", 0, Snow_cover))
-
-snowsurvey_fixed <- snowsurvey_fixed %>%
-  mutate(Snow_cover = as.numeric(Snow_cover))
-
-snowsurvey_fixed <- snowsurvey_fixed %>%
-  # filter(Snow_cover > 100) %>%
-  mutate(Snow_cover = ifelse(Snow_cover > 100, NA, Snow_cover))
-
-snowsurvey_fixed %>%
-  filter(Snow_cover < 0)
-```
-
 
 ### Cleaning the `Water_cover` column
 ```{r}
@@ -141,7 +122,6 @@ totalcover_fixed <- landcover_fixed %>%
 # check for values over 100
 totalcover_fixed %>%
   filter(Total_cover > 100)
-# no values over 100
 
 # check for negative values
 totalcover_fixed %>%
@@ -171,7 +151,12 @@ totalcover_fixed %>%
   filter(Total_cover != 100)
 ```
 - Here I can see that there are 184 rows where snow + water + land does not equal the total in the total cover column
-- There are also 4,626 rows where land cover is not equal to 100
+- There are also 4,626 rows where total cover is not equal to 100
+
+options:
+  - for all of the rows where snow + water + land does not equal the total in the total cover column; set all the values to NA
+  - make new total column that sums the snow + water + land and then check for values > or < 100
+    - 
 
 Plan:
 - if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return that sum in the `Total_cover`
