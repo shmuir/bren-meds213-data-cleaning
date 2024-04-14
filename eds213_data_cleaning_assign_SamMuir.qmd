@@ -22,7 +22,7 @@ snowsurvey_file <- "ASDN_Snow_survey.csv"
 
 ```{r}
 # Import the species
-snowsurvey_csv <- read_csv("data/snow_cover_fixed.csv")
+snowsurvey_csv <- read_csv("data/processed/snow_cover.csv")
 
 glimpse(snowsurvey_csv)
 ```
@@ -135,8 +135,6 @@ totalcover_fixed <- totalcover_fixed %>%
 
 totalcover_fixed %>%
   filter(Total_cover > 100)
-
-glimpse(totalcover_fixed)
 ```
  
 ##### Making sure the cover columns equal the total cover
@@ -169,6 +167,12 @@ cover_fixed <- totalcover_fixed %>%
 
 cover_fixed %>%
   filter(Snow_cover + Water_cover + Land_cover < 100) %>%
-  select(-Notes)
+  select(-Notes, -Observer)
+
+cover_total_fixed <- cover_fixed %>%
+  mutate(Snow_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Snow_cover),
+         Water_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Water_cover),
+         Land_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Land_cover),
+         Total_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Total_cover))
 ```
 

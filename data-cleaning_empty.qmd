@@ -145,7 +145,7 @@ No negative value detected ✅
 Let's write the presence table to a csv file:
 
 ```{r}
-write_csv(snowsurvey_fixed, "data/snow_cover_fixed.csv")
+write_csv(snowsurvey_fixed, "data/processed/snow_cover.csv")
 ```
 
 <hr> 
