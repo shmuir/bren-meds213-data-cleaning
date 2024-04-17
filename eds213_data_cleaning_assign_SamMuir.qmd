@@ -30,7 +30,7 @@ glimpse(snowsurvey_csv)
 
 ### Cleaning the `Water_cover` column
 ```{r}
-snowsurvey_fixed %>%
+snowsurvey_csv %>%
   count(Water_cover) %>%
   filter(is.na(as.numeric(Water_cover)))
 ```
@@ -39,7 +39,7 @@ snowsurvey_fixed %>%
 ```{r}
 # turning these character values in NAs
 # from the Readme: the "-" indicates an absence of data
-watercover_fixed <- snowsurvey_fixed %>%
+watercover_fixed <- snowsurvey_csv %>%
   mutate(Water_cover = ifelse(Water_cover %in% c("n/a", "unk", "-", "."), NA, Water_cover),
          Water_cover = as.numeric(Water_cover))
 
@@ -130,9 +130,10 @@ totalcover_fixed %>%
  - there are no total cover values less than 0, but there are many greater than 100
  
 ```{r}
+# if Total_cover is greater than 100, set those to NA, otherwise return the value of Total_cover
 totalcover_fixed <- totalcover_fixed %>%
   mutate(Total_cover = ifelse(Total_cover > 100, NA, Total_cover))
-
+# check that there are now no values greater than 100
 totalcover_fixed %>%
   filter(Total_cover > 100)
 ```
@@ -145,34 +146,35 @@ totalcover_fixed %>%
   select(-Notes) %>%
   filter(match == "no")
 
+# there are still 174 rows where the sum of the snow, water, and land cover does not equal the total cover
+# this is because the Total_cover is 100 but they do not sum to be 100, or sometimes the total cover is another value that they do not sum up to
+
 totalcover_fixed %>%
   filter(Total_cover != 100)
+# there are also 4,616 rows where total cover is not equal to 100
 ```
-- Here I can see that there are 184 rows where snow + water + land does not equal the total in the total cover column
-- There are also 4,626 rows where total cover is not equal to 100
 
-options:
+Some options:
   - for all of the rows where snow + water + land does not equal the total in the total cover column; set all the values to NA
   - make new total column that sums the snow + water + land and then check for values > or < 100
-    - 
 
 Plan:
-- if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return that sum in the `Total_cover`
+- if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return that sum in a new column `new_fixed`
 - if `Snow_cover` + `Water_cover` + `Land_cover` < 100 then inspect and see what's going on
 - if `Snow_cover` + `Water_cover` + `Land_cover` > 100 then return NAs for all the cover types
 
 ```{r}
 cover_fixed <- totalcover_fixed %>%
-  mutate(total_fixed = ifelse((Snow_cover + Water_cover + Land_cover) == 100, (Snow_cover + Water_cover + Land_cover), NA))
+  rowwise() %>% 
+  mutate(new_fixed = sum(Snow_cover, Water_cover, Land_cover, na.rm = TRUE), # sum across the rows; use rowwise() and na.rm = TRUE to still return the sum instead of NA even if one of the values is an NA
+         new_fixed = ifelse(new_fixed == 100, 100, NA)) # sometimes the sum is less than or greater than 100, so set those to NA
 
 cover_fixed %>%
-  filter(Snow_cover + Water_cover + Land_cover < 100) %>%
+  filter(is.na(new_fixed)) %>%
   select(-Notes, -Observer)
 
-cover_total_fixed <- cover_fixed %>%
-  mutate(Snow_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Snow_cover),
-         Water_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Water_cover),
-         Land_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Land_cover),
-         Total_cover = ifelse(Snow_cover + Water_cover + Land_cover < 100, NA, Total_cover))
-```
+# there are now 5,402 NA rows in the new_fixed column
+# I cannot assume what the missing values are and I feel better setting them to NA since I do not know where the mistake occurred
+# I do not want to get rid of the values in the snow, water, and land columns though, since when they were surveying, they may have only been interested in snow cover and would need those values still
+``` 
 
