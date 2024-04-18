@@ -2,7 +2,13 @@
 title: "Assignment 2 - Data Cleaning"
 author: "Sam Muir"
 format: html
+editor: 
+  markdown: 
+    wrap: 72
 ---
+
+[Link to Github
+repo](https://github.com/shmuir/bren-meds213-data-cleaning)
 
 ```{r}
 #| message: false  
@@ -20,21 +26,23 @@ species_file <- "ASDN_Daily_species.csv"
 snowsurvey_file <- "ASDN_Snow_survey.csv"
 ```
 
-```{r}
+```{r, message=FALSE}
 # Import the species
 snowsurvey_csv <- read_csv("data/processed/snow_cover.csv")
 
 glimpse(snowsurvey_csv)
 ```
 
-
 ### Cleaning the `Water_cover` column
+
 ```{r}
 snowsurvey_csv %>%
   count(Water_cover) %>%
   filter(is.na(as.numeric(Water_cover)))
 ```
-- We have values that are not numeric: "n/a", "unk", "-", and "."
+
+-   We have values that are not numeric: "n/a", "unk", "-", and "."
+-   all of these need to be transformed to NA
 
 ```{r}
 # turning these character values in NAs
@@ -55,7 +63,15 @@ watercover_fixed <- watercover_fixed %>%
   mutate(Water_cover = ifelse(Water_cover > 100, NA, Water_cover))
 ```
 
-- In this case we are assuming that the water cover of 353 is incorrect. This row also has an illogical value of -298 for land cover. Though the value for snow cover does make sense (45). We could assume that the 45 is correct and that with another combination of Snow and Water cover will equal a total cover of 100. But, I think it makes more sense to assume that all of the values in that row are incorrect and make everything NA. Even though 45 is a reasonable value, it still could be a mistakenly recorded values like the others in the row.  
+-   In this case I am assuming that the water cover of 353 is incorrect.
+    This row also has an illogical value of -298 for land cover. Though
+    the value for snow cover does make sense (45). We could assume that
+    the 45 is correct and that with another combination of Snow and
+    Water cover will equal a total cover of 100. But, I think it makes
+    more sense to assume that all of the values in that row are
+    incorrect and make everything NA. Even though 45 is a reasonable
+    value, it still could be a mistakenly recorded values like the
+    others in the row.
 
 ```{r}
 # check for negative values
@@ -65,16 +81,9 @@ watercover_fixed %>%
 ```
 
 ### Cleaning the `Land_cover` column
-```{r}
-watercover_fixed %>%
-  count(Land_cover) %>%
-  filter(is.na(as.numeric(Land_cover)))
-```
-- We have values that are not numeric: "n/a", "unk", "-", and "."
 
 ```{r}
 # turning these character values in NAs
-# from the Readme: the "-" indicates an absence of data
 landcover_fixed <- watercover_fixed %>%
   mutate(Land_cover = ifelse(Land_cover %in% c("n/a", "unk", "-", "."), NA, Land_cover),
          Land_cover = as.numeric(Land_cover))
@@ -92,7 +101,12 @@ landcover_fixed %>%
 landcover_fixed %>%
   filter(Land_cover < 0)
 ```
-There are two Land_cover values that are less than 0: -100 & -298. In this case, each of these is part of a row that also have values that do not make sense for the other cover categories. I do not want to try to guess what they may have been intending, so I am going to set all of the cover type values for these two rows to NA. 
+
+-   There are two Land_cover values that are less than 0: -100 & -298.
+    In this case, each of these is part of a row that also have values
+    that do not make sense for the other cover categories. I do not want
+    to guess what they may have been intending, so I am going to set all
+    of the cover type values for these two rows to NA.
 
 ```{r}
 landcover_fixed <- landcover_fixed %>%
@@ -105,7 +119,9 @@ landcover_fixed %>%
   filter(Land_cover < 0)
 ```
 
-Looking at the new landcover_fixed data frame, I can see that there are cases where there are non-zero values entered for certain cover types, but the total cover is 0. 
+-   Looking at the new landcover_fixed data frame, I can see that there
+    are cases where there are non-zero values entered for certain cover
+    types, but the total cover is 0.
 
 ### Cleaning the `Total_cover` column
 
@@ -127,8 +143,10 @@ totalcover_fixed %>%
 totalcover_fixed %>%
   filter(Total_cover < 0)
 ```
- - there are no total cover values less than 0, but there are many greater than 100
- 
+
+-   there are no total cover values less than 0, but there are many
+    greater than 100
+
 ```{r}
 # if Total_cover is greater than 100, set those to NA, otherwise return the value of Total_cover
 totalcover_fixed <- totalcover_fixed %>%
@@ -137,7 +155,7 @@ totalcover_fixed <- totalcover_fixed %>%
 totalcover_fixed %>%
   filter(Total_cover > 100)
 ```
- 
+
 ##### Making sure the cover columns equal the total cover
 
 ```{r}
@@ -155,26 +173,55 @@ totalcover_fixed %>%
 ```
 
 Some options:
-  - for all of the rows where snow + water + land does not equal the total in the total cover column; set all the values to NA
-  - make new total column that sums the snow + water + land and then check for values > or < 100
+
+-   for all of the rows where snow + water + land does not equal the
+    total in the total cover column; set all the values to NA
+
+-   make new total column that sums the snow + water + land and then
+    check for values \> or \< 100
 
 Plan:
-- if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return that sum in a new column `new_fixed`
-- if `Snow_cover` + `Water_cover` + `Land_cover` < 100 then inspect and see what's going on
-- if `Snow_cover` + `Water_cover` + `Land_cover` > 100 then return NAs for all the cover types
+
+-   if `Snow_cover` + `Water_cover` + `Land_cover` = 100 then return
+    that sum in a new column `new_fixed`
+
+-   if `Snow_cover` + `Water_cover` + `Land_cover` \< 100 then inspect
+    and see what's going on
+
+-   if `Snow_cover` + `Water_cover` + `Land_cover` \> 100 then return
+    NAs for all the cover types
 
 ```{r}
 cover_fixed <- totalcover_fixed %>%
   rowwise() %>% 
-  mutate(new_fixed = sum(Snow_cover, Water_cover, Land_cover, na.rm = TRUE), # sum across the rows; use rowwise() and na.rm = TRUE to still return the sum instead of NA even if one of the values is an NA
-         new_fixed = ifelse(new_fixed == 100, 100, NA)) # sometimes the sum is less than or greater than 100, so set those to NA
+  mutate(Total_cover = sum(Snow_cover, Water_cover, Land_cover, na.rm = TRUE), # sum across the rows; use rowwise() and na.rm = TRUE to still return the sum instead of NA even if one of the values is an NA
+         Total_cover = ifelse(Total_cover == 100, 100, NA)) # sometimes the sum is less than or greater than 100, so set those to NA
 
 cover_fixed %>%
-  filter(is.na(new_fixed)) %>%
-  select(-Notes, -Observer)
+  filter(is.na(Total_cover)) %>%
+  select(-Notes, -Observer, -Site)
 
-# there are now 5,402 NA rows in the new_fixed column
-# I cannot assume what the missing values are and I feel better setting them to NA since I do not know where the mistake occurred
-# I do not want to get rid of the values in the snow, water, and land columns though, since when they were surveying, they may have only been interested in snow cover and would need those values still
-``` 
+# there are now 5,402 NA rows in the Total_cover column
 
+head(cover_fixed) %>%
+  select(-Notes, -Observer, -Site)
+```
+
+Thoughts:
+
+-   I cannot assume what the missing values are and I feel better
+    setting them to NA since I do not know where the mistake occurred
+
+-   I do not want to get rid of the values in the snow, water, and land
+    columns though, since when they were surveying, they may have only
+    been interested in snow cover and would need those values still
+
+-   I think making a new column that recomputes the sum of the snow,
+    water, and land cover makes sense since there are sometimes where
+    these values to add up to 100, but that was not reported in the
+    total cover. Similarly, sometimes the total cover value was 100 when
+    that was not the true sum
+
+```{r, eval=FALSE}
+write_csv(cover_fixed, "data/processed/snow_cover.csv")
+```
